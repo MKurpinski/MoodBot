@@ -22,15 +22,22 @@ namespace MoodBot.Dialogs
         private async Task MessageReceivedAsync(IDialogContext context, IAwaitable<IMessageActivity> result)
         {
             var message = await result;
-            if (message.Attachments.Any() == false)
+            if ( message.Attachments!=null && message.Attachments.Any())
             {
-                context.Fail(new ArgumentException("Missing attachment"));
-            }
-            var imageData = new WebClient().DownloadData(message.Attachments[0].ContentUrl);
-            var emotions = await EmotionsApi.GetMoodForImage(imageData);
-            var json = await emotions.Content.ReadAsStringAsync();
+                var imageData = new WebClient().DownloadData(message.Attachments[0].ContentUrl);
+                var emotions = await EmotionsApi.GetMoodForImage(imageData);
+                var json = await emotions.Content.ReadAsStringAsync();
 
-            await context.PostAsync(json);
+                await context.PostAsync(json);
+            }
+            if (!string.IsNullOrWhiteSpace(message.Text))
+            {
+                var sentiment = await EmotionsApi.GetMoodForText(message.Text);
+                var json = await sentiment.Content.ReadAsStringAsync();
+
+                await context.PostAsync(json);
+            }
+
             context.Wait(MessageReceivedAsync);
         }
     }
